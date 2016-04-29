@@ -13,7 +13,7 @@ Example:
       +-----------+
  1    | 1   2   3 |
  2    | 4   5   6 |       [3/3, 1/1, 1/2, 1/3, 2/1, 2/2, 2/3, 3/1, 3/2]
- 3    | 7   8     |
+ 3    | 7   8    |
       +-----------+
         1   2   3
 
@@ -32,6 +32,8 @@ swap(Empty, Tile, [Tile|Ts], [Empty|Ts]) :-  % Swap allowed if Man Dist = 1
 swap(Empty, Tile, [T1|Ts], [T1|Ts1]) :-
     swap(Empty, Tile, Ts, Ts1).
 
+
+	
 mandist(X/Y, X1/Y1, D) :-      % D is Manhattan Dist between two positions
     dif(X, X1, Dx),
     dif(Y, Y1, Dy),
@@ -42,6 +44,19 @@ dif(A, B, D) :-                % D is |A-B|
 
 dif(A, B, D) :-                % D is |A-B|
     D is B-A.
+
+misdist(X/Y, X1/Y1, D)	:-
+	dif(X, X1, Dx),
+    dif(Y, Y1, Dy),
+    D is Dx + Dy,
+	D > 0,
+	D is 1,!.
+
+misdist(X/Y, X1/Y1, D)	:-
+	dif(X, X1, Dx),
+    dif(Y, Y1, Dy),
+	D = 0.
+
 
 goal([3/3,1/1,1/2,1/3,2/1,2/2,2/3,3/1,3/2]).
 
@@ -78,7 +93,6 @@ start4([2/1,1/3,3/1,2/3,3/2,1/1,1/2,2/2,3/3]).   %  15 moves
 
 start5([2/2,2/3,1/2,3/3,1/3,2/1,3/2,1/1,3/1]).   %  18 moves
 
-start6([3/1,2/3,2/2,3/3,1/3,1/1,3/2,1/2,2/1]).   %  18 moves
 
 % Example query: ?- start1(Pos), solve(Pos, Sol), showsol(Sol).
 
@@ -97,6 +111,6 @@ h([_Empty|Tiles], H) :-
 totdist([], [], 0).
 
 totdist([Tile|Tiles], [Position|Positions], D) :-
-    mandist(Tile, Position, D1),
+    misdist(Tile, Position, D1),
     totdist(Tiles, Positions, D2),
     D is D1 + D2.
