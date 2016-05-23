@@ -43,7 +43,7 @@ def search_path(end_colmn,end_row): #use breadth first search to find the right 
         if axo:
             can_go = can_go + ['T']
         if key:
-            can_go = can_go + ['k']
+            can_go = can_go + ['-']
         for i in [-1,1]:                     #breadth frist search check out every place where can go to
             if world[node.colum+i][node.row] in can_go:
                 new_node = Node()
@@ -89,35 +89,43 @@ def go_to(end):
     print('colum={},row={},end[0]={},end[1]={}'.format(colum,row,end[0],end[1]))
     if a == -1:
         if dirn == 3:
-            prior_action = 'f'
             if world[end[0]][end[1]] == 'T':
+                prior_action = 'c'
                 return 'c'
             if world[end[0]][end[1]] == '-':
+                prior_action = 'u'
                 return 'u'
+            prior_action = 'f'
             return 'f'
     if a == 1:
         if dirn == 1:
-            prior_action = 'f'
             if world[end[0]][end[1]] == 'T':
+                prior_action = 'c'
                 return 'c'
             if world[end[0]][end[1]] == '-':
+                prior_action = 'u'
                 return 'u'
+            prior_action = 'f'
             return 'f'
     if b == 1:
         if dirn == 2:
-            prior_action = 'f'
             if world[end[0]][end[1]] == 'T':
+                prior_action = 'c'
                 return 'c'
             if world[end[0]][end[1]] == '-':
+                prior_action = 'u'
                 return 'u'
+            prior_action = 'f'
             return 'f'
     if b == -1:
         if dirn == 0:
-            prior_action = 'f'
             if world[end[0]][end[1]] == 'T':
+                prior_action = 'c'
                 return 'c'
             if world[end[0]][end[1]] == '-':
+                prior_action = 'u'
                 return 'u'
+            prior_action = 'f'
             return 'f'
     
     if dirn == 0:
@@ -126,9 +134,7 @@ def go_to(end):
         dirn -= 1
     prior_action = 'r'
     return 'r'
-            
-            
-    
+   
 
 def hang_out(view):
     global dirn
@@ -137,14 +143,12 @@ def hang_out(view):
     global can_go
     # find the area that can go but have not been   
     #stack = [] #save the dirction order by the prioritize
-
     hang = []
     if view[1][2] in can_go:
-        for _ in range(6):
+        for _ in range(3):
             hang.append('f')
 
     if view[2][3] in can_go:
-        hang.append('r')
         hang.append('r')
 
     if view[2][1] in can_go:
@@ -235,24 +239,6 @@ def record_to_world(view): #save the view into the world[][] which is world mode
         elif r == 2:
             world[colum + i][row + r] = view[0][2+i]
 
-HOST = 'localhost'
-PORT = 31415
-ADDR = (HOST, PORT) 
-
-sock = socket(AF_INET, SOCK_STREAM)
-sock.connect(ADDR)
-data = get_view(sock.recv(24,MSG_WAITALL).decode("UTF-8"))
-for i in range(-2,3):
-    for j in range(-2,3):
-            world[colum - i][row - j] = data[i+2][2+j]
-
-for _ in range(150):
-    action = hang_out(data)
-    sock.send(action.encode("UTF-8"))
-    data = get_view(sock.recv(24,MSG_WAITALL).decode("UTF-8"))
-    if prior_action == 'f':
-        record_to_world(data)
-
 def target():      #search all item  from world map
     result = {}
     for i in range(30,60):
@@ -266,16 +252,42 @@ def target():      #search all item  from world map
             if world[i][j]== 'o':
                 result['o']=(i,j)
     return result
+
+
+HOST = 'localhost'
+PORT = 31415
+ADDR = (HOST, PORT) 
+
+sock = socket(AF_INET, SOCK_STREAM)
+sock.connect(ADDR)
+data = get_view(sock.recv(24,MSG_WAITALL).decode("UTF-8"))
+for i in range(-2,3):
+    for j in range(-2,3):
+            world[colum - i][row - j] = data[i+2][2+j]
+
+for _ in range(300):
+    action = hang_out(data)
+    sock.send(action.encode("UTF-8"))
+    data = get_view(sock.recv(24,MSG_WAITALL).decode("UTF-8"))
+    if prior_action == 'f':
+        record_to_world(data)
+
+
 profile={'o':axo,'g':gold,'k':key,'o':stone}
 destination = {}
 result = target()
 for a in result:
     track = search_path(result[a][0],result[a][1]) #all the possibal way to get item
     if track:
-        profile[a] = True
+        if a == 'k':
+            key = True
+        if a == 'g':
+            gold == True
+        if a == 'o':
+            axo = True
         destination[a] = track
         
-i = -1
+
 for p in destination:
     path = destination[p]
     while len(path) > 0:
@@ -291,6 +303,34 @@ for p in destination:
         if prior_action != 'f':
             path.append(des)
 
+for _ in range(50):
+    action = hang_out(data)
+    sock.send(action.encode("UTF-8"))
+    data = get_view(sock.recv(24,MSG_WAITALL).decode("UTF-8"))
+    if prior_action == 'f':
+        record_to_world(data)
+
+destination = {}
+result = target()
+for a in result:
+    track = search_path(result[a][0],result[a][1]) #all the possibal way to get item
+    if track:
+        destination[a] = track
+
+for p in destination:
+    path = destination[p]
+    while len(path) > 0:
+        print(path)
+        des = path.pop()
+        action = go_to(des)
+        sock.send(action.encode("UTF-8"))
+        data = get_view(sock.recv(24,MSG_WAITALL).decode("UTF-8"))
+        if prior_action == 'f':
+            record_to_world(data)
+        if des[0] == result[p][0] and des[1] == result[p][1]:
+            break
+        if prior_action != 'f':
+            path.append(des)
     
     
   # print_view(data)
